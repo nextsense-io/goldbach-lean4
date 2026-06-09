@@ -1,0 +1,4 @@
+.lake/
+build/
+*.olean
+GoldbachProof/_archimedes_tmp/
