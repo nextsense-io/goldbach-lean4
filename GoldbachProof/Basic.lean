@@ -81,6 +81,12 @@ theorem exists_pair_implies_E_gold_pos (N p q : ℕ)
   unfold E_gold
   exact Finset.card_pos.mpr ⟨(p, q), hmem⟩
 
+/-\! ### Goldbach Pairing Matrix -/
+
+/-- The indicator function for the Goldbach pairing: 1 if p + q = N, else 0. -/
+def goldbachIndicator (N p q : ℕ) : ℕ :=
+  if p + q = N then 1 else 0
+
 /-- The ordered Goldbach pair count (sum of the pairing indicator over all
     ordered pairs of primes up to N) is positive iff E_gold N > 0.
     This connects the matrix total ∑ᵢⱼ (M_gold)ᵢⱼ — the quantity that
@@ -115,12 +121,6 @@ theorem ordered_count_pos_iff_E_gold_pos (N : ℕ) :
       exact Nat.zero_le _
     · refine ⟨p, hp, Finset.sum_pos' (fun j _ => Nat.zero_le _) ⟨q, hq, ?_⟩⟩
       simp [goldbachIndicator, hsum_pq]
-
-/-\! ### Goldbach Pairing Matrix -/
-
-/-- The indicator function for the Goldbach pairing: 1 if p + q = N, else 0. -/
-def goldbachIndicator (N p q : ℕ) : ℕ :=
-  if p + q = N then 1 else 0
 
 /-\! ### Spectral Properties -/
 
