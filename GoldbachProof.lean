@@ -3,3 +3,4 @@ import GoldbachProof.Basic
 import GoldbachProof.Jensen
 import GoldbachProof.CauchyInterlacing
 import GoldbachProof.APSpread
+import GoldbachProof.BridgeLemmas
