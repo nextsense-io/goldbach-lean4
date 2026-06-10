@@ -1110,4 +1110,25 @@ theorem exists_eigenvalue_ge_avg_total
   rw [hrhs] at hlt
   exact lt_irrefl S hlt
 
+open Matrix in
+/-- Some eigenvalue is at least the average eigenvalue trace/m.
+    NOTE: Mathlib's `IsHermitian.eigenvalues` carries no ordering guarantee
+    (only `eigenvalues₀` is sorted), so the correct unconditional statement
+    is existential. Via `trace_eq_sum_eigenvalues`, this is "max ≥ average".
+    Proved 2026-06-09. -/
+theorem exists_eigenvalue_ge_avg_trace
+    {m : ℕ} [NeZero m] [DecidableEq (Fin m)]
+    (A : Matrix (Fin m) (Fin m) ℝ) (hA : A.IsHermitian) :
+    ∃ i : Fin m, A.trace / m ≤ hA.eigenvalues i := by
+  have htr : A.trace = ∑ i, hA.eigenvalues i := by
+    simpa using hA.trace_eq_sum_eigenvalues
+  have hm : (0 : ℝ) < m := by
+    exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne m)
+  have hsum : ∑ _i : Fin m, A.trace / (m : ℝ) ≤ ∑ i : Fin m, hA.eigenvalues i := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      mul_comm, div_mul_cancel₀ _ (ne_of_gt hm)]
+    exact le_of_eq htr
+  obtain ⟨i, _, hi⟩ := Finset.exists_le_of_sum_le Finset.univ_nonempty hsum
+  exact ⟨i, hi⟩
+
 end CourantFischer
