@@ -1057,4 +1057,57 @@ theorem rank1_interlacing_general
 -- ALL k ≤ m-2, which is sufficient for the Goldbach proof pipeline (which only
 -- needs E₁ ≥ d_min via the k=1 case).
 
+open Matrix in
+/-- Some eigenvalue is at least the average of all matrix entries.
+    Proof: take x = 𝟙 in the Rayleigh eigenbasis decomposition:
+    ∑ entries = 𝟙·(A𝟙) = ∑ᵢ λᵢ cᵢ², and ∑ᵢ cᵢ² = ∑ⱼ 1² = m by Parseval.
+    If every λᵢ < S/m, then S = ∑ λᵢcᵢ² < (S/m)·m = S — contradiction.
+    For the Goldbach pairing matrix this converts the ordered pair count
+    (∑ entries, bounded below by analytic hypotheses) into a spectral
+    lower bound. Proved 2026-06-09. -/
+theorem exists_eigenvalue_ge_avg_total
+    {m : ℕ} [NeZero m]
+    (A : Matrix (Fin m) (Fin m) ℝ)
+    (hA : A.IsHermitian) :
+    ∃ i : Fin m, (∑ p : Fin m, ∑ q : Fin m, A p q) / m ≤ hA.eigenvalues i := by
+  by_contra hcon
+  push_neg at hcon
+  set S := ∑ p : Fin m, ∑ q : Fin m, A p q with hS
+  set ones : Fin m → ℝ := fun _ => 1 with hones
+  set c : Fin m → ℝ := fun i => dotProduct (⇑(hA.eigenvectorBasis i)) ones with hc
+  have hm : (0 : ℝ) < m := by
+    exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne m)
+  have hdot : dotProduct ones (A *ᵥ ones) = S := by
+    simp [dotProduct, Matrix.mulVec, hones, hS]
+  have hdecomp := rayleigh_eigenbasis_decomposition A hA ones
+  have hpars := eigenbasis_parseval A hA ones
+  have hpm : ∑ j : Fin m, (ones j) ^ 2 = (m : ℝ) := by
+    simp [hones]
+  rw [hpm] at hpars
+  have hex : ∃ i : Fin m, 0 < c i ^ 2 := by
+    by_contra hno
+    push_neg at hno
+    have hzero : ∑ i : Fin m, c i ^ 2 = 0 :=
+      le_antisymm (Finset.sum_nonpos fun i _ => hno i)
+        (Finset.sum_nonneg fun i _ => sq_nonneg _)
+    rw [hc] at hzero
+    rw [hzero] at hpars
+    linarith
+  obtain ⟨i₀, hi₀⟩ := hex
+  have hlt : ∑ i : Fin m, hA.eigenvalues i * c i ^ 2
+      < ∑ i : Fin m, (S / m) * c i ^ 2 :=
+    Finset.sum_lt_sum
+      (fun i _ => mul_le_mul_of_nonneg_right (hcon i).le (sq_nonneg _))
+      ⟨i₀, Finset.mem_univ _, mul_lt_mul_of_pos_right (hcon i₀) hi₀⟩
+  have hrhs : ∑ i : Fin m, (S / m) * c i ^ 2 = S := by
+    rw [← Finset.mul_sum, hc]
+    rw [hpars]
+    field_simp
+  rw [hdot] at hdecomp
+  rw [hc] at hlt
+  rw [← hdecomp] at hlt
+  rw [hc] at hrhs
+  rw [hrhs] at hlt
+  exact lt_irrefl S hlt
+
 end CourantFischer
