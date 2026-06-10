@@ -122,6 +122,19 @@ theorem ordered_count_pos_iff_E_gold_pos (N : ℕ) :
     · refine ⟨p, hp, Finset.sum_pos' (fun j _ => Nat.zero_le _) ⟨q, hq, ?_⟩⟩
       simp [goldbachIndicator, hsum_pq]
 
+/-- Goldbach reduced to the analytic count hypothesis: if every even N ≥ 4
+    has positive ordered Goldbach pair count, the conjecture holds.
+    This is the formal capstone of the certificate chain — everything
+    downstream of the analytic input is machine-checked. Proved 2026-06-09. -/
+theorem goldbach_of_count_hypothesis
+    (h : ∀ N : ℕ, 2 ∣ N → N ≥ 4 →
+      0 < ∑ p ∈ primesUpTo N, ∑ q ∈ primesUpTo N, goldbachIndicator N p q) :
+    goldbachConjecture := by
+  unfold goldbachConjecture
+  intro N hN h4
+  exact E_gold_pos_implies_goldbach N
+    ((ordered_count_pos_iff_E_gold_pos N).mp (h N hN h4))
+
 /-\! ### Spectral Properties -/
 
 /-- Each prime p has at most one partner q such that p + q = N. -/
