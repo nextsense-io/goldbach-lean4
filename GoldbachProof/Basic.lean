@@ -81,6 +81,41 @@ theorem exists_pair_implies_E_gold_pos (N p q : ℕ)
   unfold E_gold
   exact Finset.card_pos.mpr ⟨(p, q), hmem⟩
 
+/-- The ordered Goldbach pair count (sum of the pairing indicator over all
+    ordered pairs of primes up to N) is positive iff E_gold N > 0.
+    This connects the matrix total ∑ᵢⱼ (M_gold)ᵢⱼ — the quantity that
+    analytic hypotheses can bound from below — to the formal pair count.
+    Proved 2026-06-09. -/
+theorem ordered_count_pos_iff_E_gold_pos (N : ℕ) :
+    (0 < ∑ p ∈ primesUpTo N, ∑ q ∈ primesUpTo N, goldbachIndicator N p q)
+    ↔ E_gold N > 0 := by
+  constructor
+  · intro hsum
+    obtain ⟨p, hp, hrow⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum.ne'
+    obtain ⟨q, hq, hind⟩ := Finset.exists_ne_zero_of_sum_ne_zero hrow
+    have hprime_p : Nat.Prime p := (Finset.mem_filter.mp hp).2
+    have hprime_q : Nat.Prime q := (Finset.mem_filter.mp hq).2
+    have hsum_pq : p + q = N := by
+      by_contra hne
+      simp [goldbachIndicator, hne] at hind
+    rcases le_total p q with hle | hle
+    · exact exists_pair_implies_E_gold_pos N p q hprime_p hprime_q hle hsum_pq
+    · exact exists_pair_implies_E_gold_pos N q p hprime_q hprime_p hle (by omega)
+  · intro hE
+    have hne : (goldbachPairs N).Nonempty := by
+      unfold E_gold at hE
+      exact Finset.card_pos.mp hE
+    obtain ⟨⟨p, q⟩, hmem⟩ := hne
+    have hprod := (Finset.mem_filter.mp hmem).1
+    have hp : p ∈ primesUpTo N := (Finset.mem_product.mp hprod).1
+    have hq : q ∈ primesUpTo N := (Finset.mem_product.mp hprod).2
+    have hsum_pq : p + q = N := (Finset.mem_filter.mp hmem).2.2
+    apply Finset.sum_pos'
+    · intro i _
+      exact Nat.zero_le _
+    · refine ⟨p, hp, Finset.sum_pos' (fun j _ => Nat.zero_le _) ⟨q, hq, ?_⟩⟩
+      simp [goldbachIndicator, hsum_pq]
+
 /-\! ### Goldbach Pairing Matrix -/
 
 /-- The indicator function for the Goldbach pairing: 1 if p + q = N, else 0. -/
