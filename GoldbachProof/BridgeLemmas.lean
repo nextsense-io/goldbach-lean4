@@ -9,6 +9,8 @@ the Goldbach count at n, it converts an L¹ bound on the deficit into a bound
 on the number of exceptional n.
 -/
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Algebra.Field.GeomSum
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Data.Real.Basic
 import Mathlib.Tactic
 
@@ -40,5 +42,20 @@ theorem markov_counting (N : ℕ) (f : ℕ → ℝ) (t : ℝ) (ht : 0 < t)
         · intro x _ hx
           exact hf x
   exact h₂
+
+/-- **Geometric sum norm bound** (B1 piece 1).
+For `z` on the unit circle with `z ≠ 1`, the partial geometric sums are
+uniformly bounded: `‖∑_{n<N} zⁿ‖ ≤ 2 / ‖1 - z‖`. With the Jordan sine
+bound this gives the standard minor-arc linear exponential-sum estimate.
+Proved by hand (Cipher), 2026-06-11. -/
+theorem geom_sum_norm_le (z : ℂ) (hz : ‖z‖ = 1) (hz1 : z ≠ 1) (N : ℕ) :
+    ‖∑ n ∈ Finset.range N, z ^ n‖ ≤ 2 / ‖1 - z‖ := by
+  have hz0 : (0:ℝ) < ‖1 - z‖ := by
+    rw [norm_pos_iff, sub_ne_zero]
+    exact fun h => hz1 h.symm
+  rw [geom_sum_eq hz1, norm_div, norm_sub_rev z 1]
+  gcongr
+  calc ‖z ^ N - 1‖ ≤ ‖z ^ N‖ + ‖(1:ℂ)‖ := norm_sub_le _ _
+    _ = 2 := by rw [norm_pow, hz, one_pow, norm_one]; norm_num
 
 end GoldbachBridge
