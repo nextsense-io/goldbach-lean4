@@ -58,4 +58,58 @@ theorem geom_sum_norm_le (z : ℂ) (hz : ‖z‖ = 1) (hz1 : z ≠ 1) (N : ℕ) 
   calc ‖z ^ N - 1‖ ≤ ‖z ^ N‖ + ‖(1:ℂ)‖ := norm_sub_le _ _
     _ = 2 := by rw [norm_pow, hz, one_pow, norm_one]; norm_num
 
+/-- **Orthogonality of additive characters** (B2 core).
+For `q > 0` and `k : ℤ`, `∑_{a<q} e(2πi·k·a/q) = q` if `q ∣ k`, else `0`.
+This is the finite-Parseval/major-arc extraction kernel of the circle
+method: summing a character over a full period detects divisibility.
+Proved by hand (Cipher), 2026-06-12, after the engine spent 300+ attempts. -/
+theorem exp_orthogonality_int (q : ℕ) (hq : 0 < q) (k : ℤ) :
+    ∑ a ∈ Finset.range q,
+      Complex.exp (2 * Real.pi * Complex.I * k * a / q) =
+    if (q : ℤ) ∣ k then (q : ℂ) else 0 := by
+  have hq0 : (q : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hq.ne'
+  set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k / q) with hz
+  have hterm : ∀ a ∈ Finset.range q,
+      Complex.exp (2 * Real.pi * Complex.I * k * a / q) = z ^ a := by
+    intro a _
+    rw [hz, ← Complex.exp_nat_mul]
+    congr 1
+    ring
+  rw [Finset.sum_congr rfl hterm]
+  by_cases hdvd : (q : ℤ) ∣ k
+  · simp only [if_pos hdvd]
+    obtain ⟨m, rfl⟩ := hdvd
+    have hz1 : z = 1 := by
+      rw [hz]
+      have harg : 2 * Real.pi * Complex.I * ((q * m : ℤ) : ℂ) / q
+          = (m : ℂ) * (2 * Real.pi * Complex.I) := by
+        push_cast
+        field_simp
+      rw [harg, Complex.exp_int_mul_two_pi_mul_I]
+    rw [hz1]
+    simp
+  · simp only [if_neg hdvd]
+    have hz1 : z ≠ 1 := by
+      rw [hz, Ne, Complex.exp_eq_one_iff]
+      push_neg
+      intro n hn
+      apply hdvd
+      refine ⟨n, ?_⟩
+      have h2 : (2 * Real.pi * Complex.I) * ((k : ℂ) / q)
+          = (2 * Real.pi * Complex.I) * n := by
+        linear_combination hn
+      have h3 : (k : ℂ) / q = n :=
+        mul_left_cancel₀ Complex.two_pi_I_ne_zero h2
+      have h4 : (k : ℂ) = (q : ℂ) * n := by
+        field_simp at h3
+        linear_combination h3
+      exact_mod_cast h4
+    have hzq : z ^ q = 1 := by
+      rw [hz, ← Complex.exp_nat_mul]
+      have harg : (q : ℂ) * (2 * Real.pi * Complex.I * k / q)
+          = (k : ℂ) * (2 * Real.pi * Complex.I) := by
+        field_simp
+      rw [harg, Complex.exp_int_mul_two_pi_mul_I]
+    rw [geom_sum_eq hz1, hzq, sub_self, zero_div]
+
 end GoldbachBridge
