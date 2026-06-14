@@ -10,6 +10,7 @@ on the number of exceptional n.
 -/
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Field.GeomSum
+import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Data.Real.Basic
 import Mathlib.Tactic
@@ -111,5 +112,18 @@ theorem exp_orthogonality_int (q : ℕ) (hq : 0 < q) (k : ℤ) :
         field_simp
       rw [harg, Complex.exp_int_mul_two_pi_mul_I]
     rw [geom_sum_eq hz1, hzq, sub_self, zero_div]
+
+/-- **Half-angle norm identity** (B1 piece 2).
+`‖1 - e(2πiα)‖ = 2|sin(πα)|`. Combined with `geom_sum_norm_le`, this gives
+the standard minor-arc linear exponential-sum bound of the circle method.
+Proved by hand (Cipher), 2026-06-14. -/
+theorem norm_one_sub_exp (α : ℝ) :
+    ‖(1 : ℂ) - Complex.exp (2 * Real.pi * Complex.I * α)‖ =
+    2 * |Real.sin (Real.pi * α)| := by
+  have hrw : (2 : ℂ) * Real.pi * Complex.I * α =
+      Complex.I * ↑(2 * Real.pi * α) := by push_cast; ring
+  rw [hrw, ← neg_sub, norm_neg, Complex.norm_exp_I_mul_ofReal_sub_one,
+      show (2 * Real.pi * α) / 2 = Real.pi * α from by ring,
+      Real.norm_eq_abs, abs_mul, abs_of_pos (by norm_num : (0:ℝ) < 2)]
 
 end GoldbachBridge
