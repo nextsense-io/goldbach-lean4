@@ -251,4 +251,14 @@ theorem ramanujanSumC_periodic (q : ℕ) (hq : 0 < q) (n : ℤ) :
     push_cast; field_simp
   rw [hrw, Complex.exp_add, Complex.exp_nat_mul_two_pi_mul_I, mul_one]
 
+/-- **Ramanujan sum at zero equals Euler totient** (B6): c_q(0) = φ(q).
+When n=0, every character exp(2πi·a·0/q) = 1, so the sum equals
+the count of reduced residues mod q — Euler's totient.
+Proved 2026-06-17. -/
+theorem ramanujanSumC_zero (q : ℕ) (hq : 0 < q) :
+    ramanujanSumC q 0 = (Nat.totient q : ℂ) := by
+  simp only [ramanujanSumC, Int.cast_zero, mul_zero, zero_div, Complex.exp_zero]
+  norm_cast
+  exact (Finset.card_eq_sum_ones _).symm.trans (Nat.totient_eq_card_coprime q)
+
 end GoldbachBridge
