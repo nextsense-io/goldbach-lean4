@@ -10,6 +10,7 @@ on the number of exceptional n.
 -/
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Field.GeomSum
+import Mathlib.Data.Complex.BigOperators
 import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.RCLike.Basic
@@ -260,5 +261,84 @@ theorem ramanujanSumC_zero (q : ℕ) (hq : 0 < q) :
   simp only [ramanujanSumC, Int.cast_zero, mul_zero, zero_div, Complex.exp_zero]
   norm_cast
   exact (Finset.card_eq_sum_ones _).symm.trans (Nat.totient_eq_card_coprime q)
+
+/-- **Ramanujan sum is real** (B6): the imaginary part of c_q(n) is 0.
+Proved 2026-06-18. For q=1: the only term is exp(0)=1, which is real. For q≥2: the involution
+a ↦ q-a maps reduced residues mod q to themselves (since gcd(q,q-a)=gcd(q,a)). Under this map,
+conj(exp(2πian/q)) = exp(-2πian/q) = exp(2πi(q-a)n/q) because exp(2πin)=1 for integer n.
+Hence the sum equals its own complex conjugate and has zero imaginary part. -/
+theorem ramanujanSumC_is_real (q : ℕ) (hq : 0 < q) (n : ℤ) :
+    (ramanujanSumC q n).im = 0 := by
+  by_cases hq1 : q = 1
+  · -- q = 1: only term exp(0) = 1 is real
+    subst hq1
+    simp [ramanujanSumC]
+  · -- q ≥ 2: sum equals its conjugate via involution a ↦ q - a
+    have hq2 : 2 ≤ q := by omega
+    rw [ramanujanSumC]
+    apply Complex.conj_eq_iff_im.mp
+    rw [map_sum]
+    have hq' : (q : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hq.ne'
+    set S := (Finset.range q).filter (Nat.Coprime q) with hS_def
+    -- All elements of S are positive (gcd(q,0)=q≠1 for q≥2)
+    have ha_pos_of_mem : ∀ a ∈ S, 0 < a := fun a ha => by
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha
+      obtain ⟨_, ha_cop⟩ := ha
+      rcases Nat.eq_zero_or_pos a with rfl | h
+      · simp only [Nat.Coprime, Nat.gcd_zero_right] at ha_cop; omega
+      · exact h
+    -- Reindex: ∑ a ∈ S, conj(f a) = ∑ a ∈ S, f(q-a) = ∑ a ∈ S, f a
+    apply Finset.sum_nbij' (fun a => q - a) (fun a => q - a)
+    · -- q - a ∈ S
+      intro a ha
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha ⊢
+      obtain ⟨ha_lt, ha_cop⟩ := ha
+      have ha_pos : 0 < a := by
+        rcases Nat.eq_zero_or_pos a with rfl | h
+        · simp only [Nat.Coprime, Nat.gcd_zero_right] at ha_cop; omega
+        · exact h
+      exact ⟨by omega, (Nat.coprime_self_sub_right (Nat.le_of_lt ha_lt)).mpr ha_cop⟩
+    · -- q - a ∈ S (backward direction, same involution)
+      intro a ha
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha ⊢
+      obtain ⟨ha_lt, ha_cop⟩ := ha
+      have ha_pos : 0 < a := by
+        rcases Nat.eq_zero_or_pos a with rfl | h
+        · simp only [Nat.Coprime, Nat.gcd_zero_right] at ha_cop; omega
+        · exact h
+      exact ⟨by omega, (Nat.coprime_self_sub_right (Nat.le_of_lt ha_lt)).mpr ha_cop⟩
+    · -- left_inv: q - (q - a) = a
+      intro a ha
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha
+      obtain ⟨ha_lt, ha_cop⟩ := ha
+      have ha_pos : 0 < a := by
+        rcases Nat.eq_zero_or_pos a with rfl | h
+        · simp only [Nat.Coprime, Nat.gcd_zero_right] at ha_cop; omega
+        · exact h
+      omega
+    · -- right_inv: q - (q - a) = a
+      intro a ha
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha
+      obtain ⟨ha_lt, ha_cop⟩ := ha
+      have ha_pos : 0 < a := by
+        rcases Nat.eq_zero_or_pos a with rfl | h
+        · simp only [Nat.Coprime, Nat.gcd_zero_right] at ha_cop; omega
+        · exact h
+      omega
+    · -- key: conj(exp(z_a)) = exp(z_{q-a})
+      -- Because z_{q-a} = conj(z_a) + n·(2πI), and exp(n·2πI) = 1 for integer n
+      intro a ha
+      simp only [hS_def, Finset.mem_filter, Finset.mem_range] at ha
+      obtain ⟨ha_lt, _⟩ := ha
+      rw [← Complex.exp_conj]
+      have hrw : 2 * ↑Real.pi * Complex.I * ↑(q - a) * ↑n / ↑q =
+          starRingEnd ℂ (2 * ↑Real.pi * Complex.I * ↑a * ↑n / ↑q) +
+          ↑n * (2 * ↑Real.pi * Complex.I) := by
+        rw [Nat.cast_sub (Nat.le_of_lt ha_lt)]
+        simp only [map_mul, map_div₀, map_ofNat, Complex.conj_ofReal, Complex.conj_I,
+                   map_natCast, map_intCast]
+        field_simp [hq']
+        ring
+      rw [hrw, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 end GoldbachBridge
