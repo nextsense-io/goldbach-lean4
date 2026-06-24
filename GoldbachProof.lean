@@ -4,3 +4,5 @@ import GoldbachProof.Jensen
 import GoldbachProof.CauchyInterlacing
 import GoldbachProof.APSpread
 import GoldbachProof.BridgeLemmas
+import GoldbachProof.RamanujanHölder
+import GoldbachProof.SpectralTheory
