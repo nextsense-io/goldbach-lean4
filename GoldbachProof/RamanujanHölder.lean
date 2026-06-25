@@ -260,4 +260,17 @@ theorem ramanujanSumC_prime_pow (p : ℕ) (hp : p.Prime) (k : ℕ) (hk : 0 < k) 
     · rw [if_pos hpk1, if_neg hpk]; push_cast; ring
     · simp [if_neg hpk, if_neg hpk1]
 
+-- ============================================================
+-- THEOREM #18: Ramanujan sum is even in n
+-- ============================================================
+
+/-- **Ramanujan sum is even** (B6, Theorem #18): c_q(-n) = c_q(n).
+    The Hölder formula expresses ramanujanSumC q n = ∑_{d|gcd(q,n.natAbs)} μ(q/d)·d,
+    which depends on n only through n.natAbs. Since (-n).natAbs = n.natAbs, the result
+    is immediate. Proved 2026-06-25. -/
+theorem ramanujanSumC_neg (q : ℕ) (hq : 0 < q) (n : ℤ) :
+    ramanujanSumC q (-n) = ramanujanSumC q n := by
+  rw [ramanujanSum_eq_moebius_sum q hq (-n), ramanujanSum_eq_moebius_sum q hq n,
+      Int.natAbs_neg]
+
 end GoldbachBridge
