@@ -64,4 +64,44 @@ theorem eulerFactor_pos (p : ℕ) (hp : p.Prime) (N : ℤ) (hN : (2 : ℕ) ∣ N
     rw [hrw]
     exact div_pos (mul_pos hp2_pos (by exact_mod_cast hp.pos)) hp1_sq_pos
 
+-- ============================================================
+-- THEOREM #20: Finite Euler product positivity
+-- ============================================================
+
+/-- **Finite singular series product positivity** (Theorem #20):
+    For any finite set S of primes and even N, the partial Euler product
+    `∏ p ∈ S, (1 + c_p(N).re / (p-1)²)` is strictly positive.
+
+    Direct corollary of `eulerFactor_pos` and `Finset.prod_pos`.
+    This is the key intermediate step toward the full singular series
+    positivity 𝔖(N) > 0 needed for the Hardy-Littlewood lower bound.
+
+    Proved 2026-06-26. -/
+theorem singularSeries_product_pos (N : ℤ) (hN : (2 : ℕ) ∣ N.natAbs)
+    (S : Finset ℕ) (hS : ∀ p ∈ S, p.Prime) :
+    (0 : ℝ) < ∏ p ∈ S, (1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2) := by
+  apply Finset.prod_pos
+  intro p hp
+  exact eulerFactor_pos p (hS p hp) N hN
+
+-- ============================================================
+-- HELPER: gcd multiplicativity for coprime moduli
+-- ============================================================
+
+/-- For coprime m, n: gcd(m*n, k.natAbs) = gcd(m, k.natAbs) * gcd(n, k.natAbs). -/
+private lemma gcd_natAbs_mul (m n : ℕ) (hcop : m.Coprime n) (k : ℤ) :
+    Nat.gcd (m * n) k.natAbs = Nat.gcd m k.natAbs * Nat.gcd n k.natAbs :=
+  hcop.mul_gcd k.natAbs
+
+-- ============================================================
+-- HELPER: μ multiplicativity for coprime arguments
+-- ============================================================
+
+/-- For coprime a, b: μ(a*b) = μ(a) * μ(b). -/
+private lemma moebius_mul_of_coprime (a b : ℕ) (hcop : a.Coprime b) :
+    (ArithmeticFunction.moebius (a * b) : ℂ) =
+    (ArithmeticFunction.moebius a : ℂ) * (ArithmeticFunction.moebius b : ℂ) := by
+  have h := ArithmeticFunction.isMultiplicative_moebius.map_mul_of_coprime hcop
+  exact_mod_cast h
+
 end GoldbachBridge
