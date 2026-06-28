@@ -440,4 +440,33 @@ theorem eulerFactor_le_two (p : ℕ) (hp : p.Prime) (N : ℤ) (hNeven : (2 : ℕ
       exact eulerFactor_lt_one_notDvd p hp hp3 N hdvd
     linarith
 
+-- ============================================================
+-- THEOREM #32: Combined if-else Euler factor formula
+-- ============================================================
+
+/-- **Euler factor combined formula** (Theorem #32):
+    For prime p and even N, the Euler factor equals:
+    - p/(p-1)    if p | N.natAbs (divisor case)
+    - (p-2)p/(p-1)² if p ∤ N.natAbs (non-divisor case)
+    Direct corollary combining Theorems #25 and #26.
+    Proved 2026-06-28. -/
+theorem singularSeries_factor_cases (p : ℕ) (hp : p.Prime) (N : ℤ) (hNeven : (2 : ℕ) ∣ N.natAbs) :
+    1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 =
+    if p ∣ N.natAbs then (p : ℝ) / ((p : ℝ) - 1)
+    else ((p : ℝ) - 2) * (p : ℝ) / ((p : ℝ) - 1) ^ 2 := by
+  by_cases hdvd : p ∣ N.natAbs
+  · rw [if_pos hdvd, singularSeries_factor_dvd p hp N hdvd]
+  · rw [if_neg hdvd, singularSeries_factor_notDvd p hp N hdvd]
+
+-- ============================================================
+-- THEOREM #33: Singular series is nonneg
+-- ============================================================
+
+/-- **Singular series nonnegativity** (Theorem #33):
+    For N ≠ 0 even, 0 ≤ 𝔖(N). Trivial corollary of `singularSeries_pos`.
+    Proved 2026-06-28. -/
+theorem singularSeries_nonneg (N : ℤ) (hN : N ≠ 0) (hNeven : (2 : ℕ) ∣ N.natAbs) :
+    0 ≤ singularSeries N :=
+  le_of_lt (singularSeries_pos N hN hNeven)
+
 end GoldbachBridge
