@@ -362,4 +362,82 @@ theorem eulerFactor_ge_three_quarters (p : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p) (
       (by positivity : (0:ℝ) ≤ 4 * ((p:ℝ) - 1)^2),
       hshift.symm.le.ge]
 
+-- ============================================================
+-- THEOREM #30: Euler factor deviation bound
+-- ============================================================
+
+/-- **Euler factor absolute deviation bound** (Theorem #30):
+    For any prime p, |factor - 1| ≤ p/(p-1)².
+    This simplifies as: |c_p(N).re/(p-1)²| ≤ p/(p-1)².
+    - If p | N: c_p(N).re = p-1, so |(p-1)/(p-1)²| = 1/(p-1) ≤ p/(p-1)² [since p-1 ≤ p].
+    - If p ∤ N: c_p(N).re = -1, so |-1/(p-1)²| = 1/(p-1)² ≤ p/(p-1)² [since 1 ≤ p].
+    Used to bound the convergence rate of ∑ |factor-1| ≤ ∑_p p/(p-1)² < ∞.
+    Proved 2026-06-28. -/
+theorem singularSeries_factor_bound_abs (p : ℕ) (hp : p.Prime) (N : ℤ) :
+    |1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 - 1| ≤
+    (p : ℝ) / ((p : ℝ) - 1) ^ 2 := by
+  have hp1_pos : (0 : ℝ) < (p : ℝ) - 1 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  have hp1_ne : (p : ℝ) - 1 ≠ 0 := ne_of_gt hp1_pos
+  have hp1sq_pos : (0 : ℝ) < ((p : ℝ) - 1) ^ 2 := pow_pos hp1_pos 2
+  have hp1sq_ne : ((p : ℝ) - 1) ^ 2 ≠ 0 := ne_of_gt hp1sq_pos
+  have hp_pos : (0 : ℝ) < (p : ℝ) := by exact_mod_cast hp.pos
+  -- Simplify: |1 + re/(p-1)² - 1| = |re/(p-1)²| = |re| / (p-1)²
+  have hsimp : 1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 - 1 =
+      (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 := by ring
+  rw [hsimp, abs_div, abs_of_pos hp1sq_pos]
+  by_cases hdvd : p ∣ N.natAbs
+  · -- dvd: c_p(N).re = p-1, so |p-1|/(p-1)² = 1/(p-1) ≤ p/(p-1)²
+    have hre : (ramanujanSumC p N).re = (p : ℝ) - 1 := by
+      rw [ramanujanSumC_prime p hp N, if_pos hdvd]; simp [Complex.sub_re, Complex.one_re]
+    rw [hre, abs_of_pos hp1_pos]
+    -- Goal: (p-1)/(p-1)² ≤ p/(p-1)²; equiv to p-1 ≤ p
+    apply div_le_div_of_nonneg_right _ hp1sq_pos.le
+    linarith
+  · -- notDvd: c_p(N).re = -1, so |-1|/(p-1)² = 1/(p-1)² ≤ p/(p-1)²
+    have hre : (ramanujanSumC p N).re = -1 := by
+      rw [ramanujanSumC_prime p hp N, if_neg hdvd]; simp [Complex.neg_re, Complex.one_re]
+    rw [hre]
+    simp only [abs_neg, abs_one]
+    -- Goal: 1/(p-1)² ≤ p/(p-1)²; equiv to 1 ≤ p
+    apply div_le_div_of_nonneg_right _ hp1sq_pos.le
+    linarith
+
+-- ============================================================
+-- THEOREM #31: Euler factor ≤ 2 for all primes and even N
+-- ============================================================
+
+/-- **Euler factor upper bound** (Theorem #31):
+    For prime p and even N, the Euler factor 1 + c_p(N).re/(p-1)² ≤ 2.
+
+    Cases:
+    - p = 2, 2 | N: factor = 2 (exact value, achieved at p=2)
+    - p | N.natAbs, p ≥ 3: factor = p/(p-1) = 1 + 1/(p-1) < 2 (since (p-2)/(p-1) ≥ 0)
+    - p ∤ N.natAbs: factor = (p-2)p/(p-1)² < 1 < 2
+
+    The upper bound 2 is tight: achieved at p=2 for any even N.
+    Proved 2026-06-28. -/
+theorem eulerFactor_le_two (p : ℕ) (hp : p.Prime) (N : ℤ) (hNeven : (2 : ℕ) ∣ N.natAbs) :
+    1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 ≤ 2 := by
+  have hp1_pos : (0 : ℝ) < (p : ℝ) - 1 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  have hp2r : (2 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp.two_le
+  by_cases hdvd : p ∣ N.natAbs
+  · -- dvd case: factor = p/(p-1); show 2 - p/(p-1) = (p-2)/(p-1) ≥ 0
+    rw [singularSeries_factor_dvd p hp N hdvd]
+    have hshift : 2 - (p : ℝ) / ((p : ℝ) - 1) =
+        ((p : ℝ) - 2) / ((p : ℝ) - 1) := by field_simp; ring
+    have h_nonneg : (0 : ℝ) ≤ 2 - (p : ℝ) / ((p : ℝ) - 1) := by
+      rw [hshift]; exact div_nonneg (by linarith) hp1_pos.le
+    linarith
+  · -- notDvd case: factor = (p-2)p/(p-1)² ≤ 1 ≤ 2
+    have hlt : 1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 < 1 := by
+      -- Note: this requires p ≥ 3 (p is odd prime since p ∤ N.natAbs but 2 | N.natAbs)
+      have hp2 : p ≠ 2 := fun h => by subst h; exact hdvd hNeven
+      have hp3 : 3 ≤ p := by have := hp.two_le; omega
+      exact eulerFactor_lt_one_notDvd p hp hp3 N hdvd
+    linarith
+
 end GoldbachBridge
