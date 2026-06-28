@@ -239,4 +239,87 @@ theorem singularSeries_pos (N : ℤ) (hN : N ≠ 0) (hNeven : (2 : ℕ) ∣ N.na
   rw [← Real.rexp_tsum_eq_tprod hpos hlog]
   exact Real.exp_pos _
 
+-- ============================================================
+-- THEOREM #25: Euler factor formula (divisor case)
+-- ============================================================
+
+/-- **Euler factor formula — divisor case** (Theorem #25):
+    For prime p dividing N.natAbs, the Euler factor equals p/(p-1).
+    Corollary of `ramanujanSumC_prime`: c_p(N) = p-1, so
+    1 + (p-1)/(p-1)² = 1 + 1/(p-1) = p/(p-1).
+    Proved 2026-06-28. -/
+theorem singularSeries_factor_dvd (p : ℕ) (hp : p.Prime) (N : ℤ)
+    (hdvd : p ∣ N.natAbs) :
+    1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 = (p : ℝ) / ((p : ℝ) - 1) := by
+  have hp1_ne : (p : ℝ) - 1 ≠ 0 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  have hre : (ramanujanSumC p N).re = (p : ℝ) - 1 := by
+    rw [ramanujanSumC_prime p hp N, if_pos hdvd]
+    simp [Complex.sub_re, Complex.one_re]
+  rw [hre]
+  field_simp
+  ring
+
+-- ============================================================
+-- THEOREM #26: Euler factor formula (non-divisor case)
+-- ============================================================
+
+/-- **Euler factor formula — non-divisor case** (Theorem #26):
+    For prime p not dividing N.natAbs, the Euler factor equals (p-2)*p/(p-1)².
+    Corollary of `ramanujanSumC_prime`: c_p(N) = -1, so
+    1 + (-1)/(p-1)² = ((p-1)²-1)/(p-1)² = (p²-2p)/(p-1)² = p(p-2)/(p-1)².
+    Proved 2026-06-28. -/
+theorem singularSeries_factor_notDvd (p : ℕ) (hp : p.Prime) (N : ℤ)
+    (hdvd : ¬ p ∣ N.natAbs) :
+    1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 =
+    ((p : ℝ) - 2) * p / ((p : ℝ) - 1) ^ 2 := by
+  have hp1_ne : (p : ℝ) - 1 ≠ 0 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  have hre : (ramanujanSumC p N).re = -1 := by
+    rw [ramanujanSumC_prime p hp N, if_neg hdvd]
+    simp [Complex.neg_re, Complex.one_re]
+  rw [hre]
+  field_simp
+  ring
+
+-- ============================================================
+-- THEOREM #27: p=2 factor is always 2 for even N
+-- ============================================================
+
+/-- **The p=2 Euler factor equals 2** (Theorem #27):
+    For even N (2 | N.natAbs), the Euler factor at p=2 is exactly 2.
+    Follows immediately from `singularSeries_factor_dvd` with p=2 (so p/(p-1) = 2/1 = 2).
+    Proved 2026-06-28. -/
+theorem singularSeries_factor_two (N : ℤ) (hNeven : (2 : ℕ) ∣ N.natAbs) :
+    1 + (ramanujanSumC 2 N).re / ((2 : ℝ) - 1) ^ 2 = 2 := by
+  have hp2 : Nat.Prime 2 := by decide
+  have hre : (ramanujanSumC 2 N).re = (2 : ℝ) - 1 := by
+    rw [ramanujanSumC_prime 2 hp2 N, if_pos hNeven]
+    simp [Complex.sub_re, Complex.one_re]
+  rw [hre]
+  norm_num
+
+-- ============================================================
+-- THEOREM #28: Non-divisor factor < 1 for odd primes
+-- ============================================================
+
+/-- **Non-divisor Euler factor is strictly less than 1** (Theorem #28):
+    For a prime p ≥ 3 not dividing N.natAbs, the Euler factor (p-2)p/(p-1)² < 1.
+    Proof: (p-2)p < (p-1)², i.e., p²-2p < p²-2p+1, i.e., 0 < 1.
+    This shows the non-divisor factors "push down" 𝔖(N) below 2 (while divisor
+    factors push it up), giving the characteristic shape of the singular series.
+    Proved 2026-06-28. -/
+theorem eulerFactor_lt_one_notDvd (p : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p) (N : ℤ)
+    (hdvd : ¬ p ∣ N.natAbs) :
+    1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 < 1 := by
+  rw [singularSeries_factor_notDvd p hp N hdvd]
+  have hp1_pos : (0 : ℝ) < (p : ℝ) - 1 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  rw [div_lt_one (pow_pos hp1_pos 2)]
+  have hp3r : (3 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp3
+  nlinarith
+
 end GoldbachBridge
