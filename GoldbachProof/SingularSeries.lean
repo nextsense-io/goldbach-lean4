@@ -322,4 +322,44 @@ theorem eulerFactor_lt_one_notDvd (p : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p) (N : 
   have hp3r : (3 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp3
   nlinarith
 
+-- ============================================================
+-- THEOREM #29: Euler factor ≥ 3/4 for odd primes
+-- ============================================================
+
+/-- **Euler factor uniform lower bound** (Theorem #29):
+    For prime p ≥ 3 and even N, the Euler factor 1 + c_p(N).re/(p-1)² ≥ 3/4.
+
+    Cases:
+    - p | N.natAbs: factor = p/(p-1) ≥ 3/2 ≥ 3/4 (since p ≥ 3 → p/(p-1) ≥ 3/2)
+    - p ∤ N.natAbs: factor = (p-2)p/(p-1)². Need 4(p-2)p ≥ 3(p-1)².
+      This is p²-2p-3 ≥ 0 ↔ (p-3)(p+1) ≥ 0, which holds for p ≥ 3.
+      Minimum 3/4 is achieved exactly at p=3, p ∤ N.
+
+    Proved 2026-06-28. -/
+theorem eulerFactor_ge_three_quarters (p : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p) (N : ℤ)
+    (hNeven : (2 : ℕ) ∣ N.natAbs) :
+    3 / 4 ≤ 1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 := by
+  have hp1_pos : (0 : ℝ) < (p : ℝ) - 1 := by
+    have : (1 : ℝ) < (p : ℝ) := by exact_mod_cast hp.one_lt
+    linarith
+  have hp1_ne : (p : ℝ) - 1 ≠ 0 := ne_of_gt hp1_pos
+  have hp3r : (3 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp3
+  by_cases hdvd : p ∣ N.natAbs
+  · -- dvd case: factor = p/(p-1); show p/(p-1) - 3/4 = (p+3)/(4*(p-1)) ≥ 0
+    rw [singularSeries_factor_dvd p hp N hdvd]
+    have hshift : (p : ℝ) / ((p : ℝ) - 1) - 3 / 4 =
+        ((p : ℝ) + 3) / (4 * ((p : ℝ) - 1)) := by field_simp; ring
+    linarith [div_nonneg
+      (by linarith [show (0:ℝ) < (p:ℝ) from by exact_mod_cast hp.pos] : (0:ℝ) ≤ (p:ℝ) + 3)
+      (by linarith : (0:ℝ) ≤ 4 * ((p:ℝ) - 1)),
+      hshift.symm.le.ge]
+  · -- notDvd case: factor = (p-2)*p/(p-1)²; show factor - 3/4 = (p²-2p-3)/(4*(p-1)²) ≥ 0
+    rw [singularSeries_factor_notDvd p hp N hdvd]
+    have hshift : ((p : ℝ) - 2) * (p : ℝ) / ((p : ℝ) - 1) ^ 2 - 3 / 4 =
+        ((p : ℝ) ^ 2 - 2 * (p : ℝ) - 3) / (4 * ((p : ℝ) - 1) ^ 2) := by field_simp; ring
+    linarith [div_nonneg
+      (by nlinarith : (0:ℝ) ≤ (p:ℝ)^2 - 2*(p:ℝ) - 3)
+      (by positivity : (0:ℝ) ≤ 4 * ((p:ℝ) - 1)^2),
+      hshift.symm.le.ge]
+
 end GoldbachBridge
