@@ -469,4 +469,81 @@ theorem singularSeries_nonneg (N : ℤ) (hN : N ≠ 0) (hNeven : (2 : ℕ) ∣ N
     0 ≤ singularSeries N :=
   le_of_lt (singularSeries_pos N hN hNeven)
 
+-- ============================================================
+-- THEOREM #34: Divisor factor is strictly greater than 1
+-- ============================================================
+
+/-- **Divisor Euler factor strictly exceeds 1** (Theorem #34):
+    For any prime p dividing N.natAbs, the Euler factor 1 + c_p(N).re/(p-1)² > 1.
+
+    By `singularSeries_factor_dvd`, the factor equals p/(p-1).
+    Since p > p-1 > 0, we have p/(p-1) > 1.
+    This contrasts with non-divisor odd prime factors (Theorem #28), which are < 1.
+
+    Proved 2026-06-29. -/
+theorem singularSeries_factor_dvd_gt_one (p : ℕ) (hp : p.Prime)
+    (N : ℤ) (hdvd : p ∣ N.natAbs) :
+    1 < 1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 := by
+  rw [singularSeries_factor_dvd p hp N hdvd]
+  have hp1_pos : (0 : ℝ) < (p : ℝ) - 1 := by
+    linarith [show (1 : ℝ) < (p : ℝ) from by exact_mod_cast hp.one_lt]
+  rw [one_lt_div hp1_pos]
+  linarith [show (1 : ℝ) < (p : ℝ) from by exact_mod_cast hp.one_lt]
+
+-- ============================================================
+-- THEOREM #35: Factor ≥ 1 iff p divides N (for odd primes)
+-- ============================================================
+
+/-- **Divisibility criterion via Euler factor** (Theorem #35):
+    For prime p ≥ 3 and even N, the Euler factor satisfies:
+      1 ≤ 1 + c_p(N).re/(p-1)² ↔ p ∣ N.natAbs
+
+    Forward: if factor ≥ 1 but p ∤ N, then `eulerFactor_lt_one_notDvd` gives factor < 1,
+    a contradiction.
+    Backward: if p ∣ N, then factor > 1 ≥ 1 by `singularSeries_factor_dvd_gt_one`.
+
+    This gives an arithmetic characterization: the p-th Euler factor exceeds 1
+    precisely when p is a prime divisor of the target N.
+
+    Proved 2026-06-29. -/
+theorem singularSeries_factor_ge_one_iff_dvd (p : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
+    (N : ℤ) :
+    1 ≤ 1 + (ramanujanSumC p N).re / ((p : ℝ) - 1) ^ 2 ↔ p ∣ N.natAbs := by
+  constructor
+  · intro hle
+    by_contra hndvd
+    exact absurd hle (not_le.mpr (eulerFactor_lt_one_notDvd p hp hp3 N hndvd))
+  · intro hdvd
+    linarith [singularSeries_factor_dvd_gt_one p hp N hdvd]
+
+-- ============================================================
+-- THEOREM #36: Singular series depends only on prime support
+-- ============================================================
+
+/-- **Singular series radical invariance** (Theorem #36):
+    If N and M have the same set of prime divisors (i.e., for every prime p,
+    p ∣ N.natAbs ↔ p ∣ M.natAbs), then 𝔖(N) = 𝔖(M).
+
+    Proof: Each Euler factor 1 + c_p(N).re/(p-1)² depends only on whether p | N.natAbs
+    (via `ramanujanSumC_prime`). The identity follows by `tprod_congr`.
+
+    Consequence: 𝔖(N) is constant on classes of even integers sharing the same
+    radical (squarefree kernel). In particular, 𝔖(2p) = 𝔖(2p²) for prime p,
+    and 𝔖(N) = 𝔖(N') whenever N and N' are in the same "arithmetic type"
+    (same prime support).
+
+    Proved 2026-06-29. -/
+theorem singularSeries_eq_of_same_prime_factors (N M : ℤ)
+    (h : ∀ p : ℕ, p.Prime → (p ∣ N.natAbs ↔ p ∣ M.natAbs)) :
+    singularSeries N = singularSeries M := by
+  unfold singularSeries
+  apply tprod_congr
+  intro ⟨p, hp⟩
+  have hre_eq : (ramanujanSumC p N).re = (ramanujanSumC p M).re := by
+    rw [ramanujanSumC_prime p hp N, ramanujanSumC_prime p hp M]
+    by_cases hdvd : p ∣ N.natAbs
+    · rw [if_pos hdvd, if_pos ((h p hp).mp hdvd)]
+    · rw [if_neg hdvd, if_neg (fun hm => hdvd ((h p hp).mpr hm))]
+  rw [hre_eq]
+
 end GoldbachBridge
