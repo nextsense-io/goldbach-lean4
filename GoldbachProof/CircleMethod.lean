@@ -128,4 +128,69 @@ theorem circle_method_convolution (f : ℤ → ℂ) (S : Finset ℤ) (N : ℤ) :
   -- Step 7: δ_{n+m-N,0} = δ_{n+m,N}
   simp only [Int.sub_eq_zero, mul_ite, mul_one, mul_zero]
 
+-- ============================================================
+-- THEOREM #39: Goldbach pair count = circle method integral
+-- ============================================================
+
+/-- **Goldbach pair count via circle method** (B4, theorem #39).
+    Specialising `circle_method_convolution` to the prime indicator function
+    `f n = if n.toNat.Prime then 1 else 0`, the ordered count of prime pairs
+    `(n, m) ∈ S × S` with `n + m = N` equals the Hardy-Littlewood circle integral.
+
+    This is the KEY BRIDGE between B3 (circle method algebra) and the
+    Goldbach representation problem: the analytic integral *counts* prime pairs.
+    Proved 2026-07-01. -/
+theorem goldbach_circle_method (N : ℤ) (S : Finset ℤ) :
+    ∑ n ∈ S, ∑ m ∈ S,
+        (if n + m = N ∧ n.toNat.Prime ∧ m.toNat.Prime then (1 : ℂ) else 0) =
+    ∫ α in (0 : ℝ)..1,
+      (∑ n ∈ S, (if n.toNat.Prime then (1 : ℂ) else 0) *
+          Complex.exp (2 * ↑Real.pi * Complex.I * ↑n * α)) *
+      (∑ m ∈ S, (if m.toNat.Prime then (1 : ℂ) else 0) *
+          Complex.exp (2 * ↑Real.pi * Complex.I * ↑m * α)) *
+      Complex.exp (-(2 * ↑Real.pi * Complex.I * ↑N * α)) := by
+  -- Rewrite the integral (RHS) into a double sum via circle_method_convolution
+  rw [circle_method_convolution (fun n => if n.toNat.Prime then 1 else 0) S N]
+  -- Goal: ∑∑ (if n+m=N ∧ n.prime ∧ m.prime then 1 else 0)
+  --       = ∑∑ (if n+m=N then (if n.prime then 1 else 0)*(if m.prime then 1 else 0) else 0)
+  refine Finset.sum_congr rfl (fun n _ => Finset.sum_congr rfl (fun m _ => ?_))
+  by_cases hn : n.toNat.Prime <;> by_cases hm : m.toNat.Prime <;> by_cases heq : n + m = N <;>
+    simp [hn, hm, heq]
+
+-- ============================================================
+-- THEOREM #40: Circle integral positive → Goldbach decomposition
+-- ============================================================
+
+/-- **Circle method integral positivity implies Goldbach decomposition** (B4, theorem #40).
+    If the Hardy-Littlewood circle method integral has positive real part,
+    then N is a sum of two primes from S.
+
+    This chains B3 (circle method convolution) and #39 (goldbach_circle_method)
+    into the complete analytic → combinatorial implication:
+
+      ∫₀¹ |S_prime(α)|² e(-2πiNα) dα > 0  →  N = p + q for some primes p, q ∈ S
+
+    Proved 2026-07-01. -/
+theorem circle_integral_pos_implies_goldbach (N : ℤ) (S : Finset ℤ)
+    (h_pos : 0 < (∫ α in (0 : ℝ)..1,
+      (∑ n ∈ S, (if n.toNat.Prime then (1 : ℂ) else 0) *
+          Complex.exp (2 * ↑Real.pi * Complex.I * ↑n * α)) *
+      (∑ m ∈ S, (if m.toNat.Prime then (1 : ℂ) else 0) *
+          Complex.exp (2 * ↑Real.pi * Complex.I * ↑m * α)) *
+      Complex.exp (-(2 * ↑Real.pi * Complex.I * ↑N * α))).re) :
+    ∃ n ∈ S, ∃ m ∈ S, n.toNat.Prime ∧ m.toNat.Prime ∧ n + m = N := by
+  have key := goldbach_circle_method N S
+  by_contra h_none
+  push_neg at h_none
+  have h_sum_zero : ∑ n ∈ S, ∑ m ∈ S,
+      (if n + m = N ∧ n.toNat.Prime ∧ m.toNat.Prime then (1 : ℂ) else 0) = 0 := by
+    apply Finset.sum_eq_zero; intro n hn
+    apply Finset.sum_eq_zero; intro m hm
+    simp only [ite_eq_right_iff]
+    rintro ⟨heq, hnp, hmp⟩
+    exact absurd heq (h_none n hn m hm hnp hmp)
+  rw [h_sum_zero] at key
+  rw [← key] at h_pos
+  simp at h_pos
+
 end GoldbachBridge
