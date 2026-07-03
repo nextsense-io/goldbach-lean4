@@ -9,3 +9,4 @@ import GoldbachProof.SpectralTheory
 import GoldbachProof.SingularSeries
 import GoldbachProof.CircleMethod
 import GoldbachProof.VonMangoldt
+import GoldbachProof.MajorArc

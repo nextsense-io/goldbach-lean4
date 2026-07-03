@@ -100,4 +100,12 @@ theorem vonMangoldt_exp_sum_bound (N : ℕ) (α : ℝ) :
     ‖vonMangoldt_exp_sum N α‖ ≤ (N : ℝ) * Real.log N :=
   le_trans (vonMangoldt_exp_sum_norm_le N α) (vonMangoldt_chebyshev_le N)
 
+/-- **Theorem #45. Chebyshev ψ is monotone** (B5).
+    ψ(N) ≤ ψ(M) whenever N ≤ M, since Λ(n) ≥ 0 for all n and range N ⊆ range M. -/
+theorem psi_mono (N M : ℕ) (h : N ≤ M) : psi N ≤ psi M := by
+  unfold psi
+  apply Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono h)
+  intro n _ _
+  exact vonMangoldt_nonneg
+
 end GoldbachBridge
