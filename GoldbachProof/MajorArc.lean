@@ -70,6 +70,18 @@ theorem expSum_norm_le (N : ℕ) (β : ℝ) : ‖expSum N β‖ ≤ N := by
   rw [hone, Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one]
 
 -- ---------------------------------------------------------------------------
+-- Auxiliary lemmas for the major arc approximation
+-- ---------------------------------------------------------------------------
+
+/-- **Theorem #49. expSum telescopes** (B8).
+    expSum (N+1) β = expSum N β + e(2πiNβ): one more term is added. -/
+theorem expSum_add_one (N : ℕ) (β : ℝ) :
+    expSum (N + 1) β = expSum N β +
+      Complex.exp (2 * ↑Real.pi * Complex.I * ↑N * ↑β) := by
+  unfold expSum
+  rw [Finset.sum_range_succ]
+
+-- ---------------------------------------------------------------------------
 -- The Siegel-Walfisz hypothesis
 -- ---------------------------------------------------------------------------
 

@@ -100,6 +100,15 @@ theorem vonMangoldt_exp_sum_bound (N : ℕ) (α : ℝ) :
     ‖vonMangoldt_exp_sum N α‖ ≤ (N : ℝ) * Real.log N :=
   le_trans (vonMangoldt_exp_sum_norm_le N α) (vonMangoldt_chebyshev_le N)
 
+/-- **Theorem #48. Chebyshev ψ is strictly positive for N ≥ 3** (B5).
+    ψ(N) > 0 whenever N ≥ 3: the term Λ(2) = log 2 > 0 appears in the sum
+    since 2 ∈ range N, and all other terms are nonneg. -/
+theorem psi_pos_of_three_le (N : ℕ) (hN : 3 ≤ N) : 0 < psi N := by
+  unfold psi
+  rw [Finset.sum_pos_iff_of_nonneg (fun n _ => vonMangoldt_nonneg)]
+  exact ⟨2, Finset.mem_range.mpr (by omega), by
+    rw [vonMangoldt_apply_prime Nat.prime_two]; exact Real.log_pos one_lt_two⟩
+
 /-- **Theorem #45. Chebyshev ψ is monotone** (B5).
     ψ(N) ≤ ψ(M) whenever N ≤ M, since Λ(n) ≥ 0 for all n and range N ⊆ range M. -/
 theorem psi_mono (N M : ℕ) (h : N ≤ M) : psi N ≤ psi M := by
