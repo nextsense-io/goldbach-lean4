@@ -273,4 +273,21 @@ theorem ramanujanSumC_neg (q : ℕ) (hq : 0 < q) (n : ℤ) :
   rw [ramanujanSum_eq_moebius_sum q hq (-n), ramanujanSum_eq_moebius_sum q hq n,
       Int.natAbs_neg]
 
+-- ============================================================
+-- THEOREM #51: Ramanujan sum at coprime argument = Möbius function
+-- ============================================================
+
+/-- **Ramanujan sum at coprime argument** (B8, Theorem #51).
+    When gcd(q, n.natAbs) = 1, the Hölder formula collapses to a single term:
+      c_q(n) = ∑_{d | gcd(q,n)} μ(q/d)·d = μ(q/1)·1 = μ(q).
+    This is the key identity linking the Ramanujan sum to the singular series
+    coefficient μ(q)/φ(q) in the Hardy-Littlewood B8 major arc formula.
+    Proved 2026-07-04. -/
+theorem ramanujanSumC_coprime (q : ℕ) (hq : 0 < q) (n : ℤ)
+    (hn : Nat.Coprime q n.natAbs) :
+    ramanujanSumC q n = ↑(ArithmeticFunction.moebius q) := by
+  rw [ramanujanSum_eq_moebius_sum q hq n]
+  rw [show Nat.gcd q n.natAbs = 1 from hn]
+  simp [Nat.divisors_one, Nat.div_one]
+
 end GoldbachBridge

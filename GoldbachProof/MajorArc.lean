@@ -169,6 +169,36 @@ theorem vonMangoldt_exp_sum_decompose (N q : ℕ) (a : ℤ) (β : ℝ) (hq : 0 <
     ← Finset.mul_sum]
 
 -- ---------------------------------------------------------------------------
+-- Residue-class Chebyshev ψ and rational-point evaluation
+-- ---------------------------------------------------------------------------
+
+/-- Residue-class restricted Chebyshev ψ:
+    ψ_r(N, q) = ∑_{n < N, n ≡ r (mod q)} Λ(n). -/
+noncomputable def psiResClass (N q r : ℕ) : ℝ :=
+  ∑ n ∈ (Finset.range N).filter (fun n => n % q = r), (vonMangoldt n : ℝ)
+
+/-- **Theorem #52. Von Mangoldt sum at rational point α = a/q** (B8).
+    At β = 0 (i.e., α = a/q exactly on a major arc center):
+      S_Λ(a/q) = ∑_{r<q} e(2πi·r·a/q) · ψ_r(N, q)
+    where ψ_r(N,q) = ∑_{n<N, n≡r(q)} Λ(n).
+    Direct corollary of the residue class decompose (#50) at β = 0. -/
+theorem vonMangoldt_exp_sum_at_rational (N q : ℕ) (a : ℤ) (hq : 0 < q) :
+    vonMangoldt_exp_sum N ((a : ℝ) / q) =
+    ∑ r ∈ Finset.range q,
+      Complex.exp (2 * ↑π * I * ↑r * ↑a / ↑q) * ↑(psiResClass N q r) := by
+  have h := vonMangoldt_exp_sum_decompose N q a 0 hq
+  simp only [add_zero] at h
+  rw [h]
+  apply Finset.sum_congr rfl
+  intro r _
+  congr 1
+  unfold psiResClass
+  rw [Complex.ofReal_sum]
+  apply Finset.sum_congr rfl
+  intro n _
+  simp [mul_zero, Complex.exp_zero, mul_one]
+
+-- ---------------------------------------------------------------------------
 -- Major arc approximation (B8, conditional on Siegel-Walfisz)
 -- ---------------------------------------------------------------------------
 
