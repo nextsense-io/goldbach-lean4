@@ -177,6 +177,29 @@ theorem vonMangoldt_exp_sum_decompose (N q : ℕ) (a : ℤ) (β : ℝ) (hq : 0 <
 noncomputable def psiResClass (N q r : ℕ) : ℝ :=
   ∑ n ∈ (Finset.range N).filter (fun n => n % q = r), (vonMangoldt n : ℝ)
 
+/-- **Theorem #53. psiResClass is nonneg** (B8).
+    ψ_r(N,q) ≥ 0 since Λ(n) ≥ 0 for all n. -/
+theorem psiResClass_nonneg (N q r : ℕ) : 0 ≤ psiResClass N q r :=
+  Finset.sum_nonneg (fun _ _ => vonMangoldt_nonneg)
+
+/-- **Theorem #54. Residue classes partition ψ** (B8).
+    ∑_{r<q} ψ_r(N,q) = ψ(N): the residue classes 0,…,q-1 partition range N,
+    so summing over all classes recovers the full Chebyshev ψ. -/
+theorem psiResClass_sum_eq_psi (N q : ℕ) (hq : 0 < q) :
+    ∑ r ∈ Finset.range q, psiResClass N q r = psi N := by
+  simp only [psiResClass, psi]
+  exact Finset.sum_fiberwise_of_maps_to
+    (fun n _ => Finset.mem_range.mpr (Nat.mod_lt n hq))
+    (fun n => (vonMangoldt n : ℝ))
+
+/-- **Theorem #55. Each psiResClass is bounded by psi** (B8).
+    ψ_r(N,q) ≤ ψ(N) for r < q: it is a nonneg sub-sum of the partition. -/
+theorem psiResClass_le_psi (N q r : ℕ) (hq : 0 < q) (hr : r < q) :
+    psiResClass N q r ≤ psi N := by
+  rw [← psiResClass_sum_eq_psi N q hq]
+  apply Finset.single_le_sum (fun i _ => psiResClass_nonneg N q i)
+  exact Finset.mem_range.mpr hr
+
 /-- **Theorem #52. Von Mangoldt sum at rational point α = a/q** (B8).
     At β = 0 (i.e., α = a/q exactly on a major arc center):
       S_Λ(a/q) = ∑_{r<q} e(2πi·r·a/q) · ψ_r(N, q)
@@ -197,6 +220,61 @@ theorem vonMangoldt_exp_sum_at_rational (N q : ℕ) (a : ℤ) (hq : 0 < q) :
   apply Finset.sum_congr rfl
   intro n _
   simp [mul_zero, Complex.exp_zero, mul_one]
+
+-- ---------------------------------------------------------------------------
+-- β-weighted residue-class sums (inner sums for major arc decomposition)
+-- ---------------------------------------------------------------------------
+
+/-- The β-weighted von Mangoldt residue-class sum:
+    W_r(β, N, q) = ∑_{n < N, n ≡ r (mod q)} Λ(n) · e(2πinβ).
+    At β = 0: W_r = ψ_r(N,q) (= psiResClass).
+    These are the inner sums appearing in the major arc decomposition (#50). -/
+noncomputable def vonMangoldt_residue_sum (N q r : ℕ) (β : ℝ) : ℂ :=
+  ∑ n ∈ (Finset.range N).filter (fun n => n % q = r),
+    (vonMangoldt n : ℝ) * Complex.exp (2 * ↑Real.pi * Complex.I * ↑n * ↑β)
+
+/-- **Theorem #56. Residue sum at β = 0 equals psiResClass** (B8).
+    W_r(0, N, q) = ↑(ψ_r(N,q)): at β = 0 each exponential factor is 1. -/
+theorem vonMangoldt_residue_sum_at_zero (N q r : ℕ) :
+    vonMangoldt_residue_sum N q r 0 = ↑(psiResClass N q r) := by
+  unfold vonMangoldt_residue_sum psiResClass
+  rw [Complex.ofReal_sum]
+  apply Finset.sum_congr rfl
+  intro n _
+  simp [mul_zero, Complex.exp_zero]
+
+/-- **Theorem #57. Residue sum norm bounded by psiResClass** (B8).
+    ‖W_r(β, N, q)‖ ≤ ψ_r(N,q): triangle inequality + |e(nβ)| = 1 + Λ(n) ≥ 0. -/
+theorem vonMangoldt_residue_sum_norm_le (N q r : ℕ) (β : ℝ) :
+    ‖vonMangoldt_residue_sum N q r β‖ ≤ psiResClass N q r := by
+  unfold vonMangoldt_residue_sum psiResClass
+  apply le_trans (norm_sum_le _ _)
+  apply Finset.sum_le_sum
+  intro n _
+  rw [norm_mul, expSum_factor_norm_one n β, mul_one,
+      Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg vonMangoldt_nonneg]
+
+/-- **Theorem #58. Residue sums partition the full exponential sum** (B8).
+    ∑_{r<q} W_r(β, N, q) = S_Λ(β, N): the residue classes partition range N. -/
+theorem vonMangoldt_residue_sum_total_eq (N q : ℕ) (hq : 0 < q) (β : ℝ) :
+    ∑ r ∈ Finset.range q, vonMangoldt_residue_sum N q r β =
+    vonMangoldt_exp_sum N β := by
+  simp only [vonMangoldt_residue_sum, vonMangoldt_exp_sum]
+  exact Finset.sum_fiberwise_of_maps_to
+    (fun n _ => Finset.mem_range.mpr (Nat.mod_lt n hq))
+    (fun n => (vonMangoldt n : ℝ) * Complex.exp (2 * ↑Real.pi * Complex.I * ↑n * ↑β))
+
+/-- **Theorem #59. Major arc decomposition via residue sums** (B8).
+    Reformulation of vonMangoldt_exp_sum_decompose (#50) in terms of vonMangoldt_residue_sum:
+      S_Λ(a/q + β) = ∑_{r<q} e(2πi·r·a/q) · W_r(β, N, q). -/
+theorem vonMangoldt_decompose_reformulation (N q : ℕ) (a : ℤ) (β : ℝ) (hq : 0 < q) :
+    vonMangoldt_exp_sum N ((a : ℝ) / q + β) =
+    ∑ r ∈ Finset.range q,
+      Complex.exp (2 * ↑π * I * ↑r * ↑a / ↑q) *
+      vonMangoldt_residue_sum N q r β := by
+  rw [vonMangoldt_exp_sum_decompose N q a β hq]
+  simp only [vonMangoldt_residue_sum]
 
 -- ---------------------------------------------------------------------------
 -- Major arc approximation (B8, conditional on Siegel-Walfisz)
