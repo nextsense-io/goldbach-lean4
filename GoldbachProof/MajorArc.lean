@@ -280,6 +280,14 @@ theorem vonMangoldt_decompose_reformulation (N q : ℕ) (a : ℤ) (β : ℝ) (hq
 -- Major arc approximation (B8, conditional on Siegel-Walfisz)
 -- ---------------------------------------------------------------------------
 
+/-- **Theorem #60. Bound on β-weighted residue sum** (B8).
+    ‖W_r(β, N, q)‖ ≤ N · log N for r < q.
+    Chain: ‖W_r‖ ≤ ψ_r(N,q) (#57) ≤ ψ(N) (#55) ≤ N·log N (#43). -/
+theorem vonMangoldt_residue_sum_bound (N q r : ℕ) (β : ℝ) (hq : 0 < q) (hr : r < q) :
+    ‖vonMangoldt_residue_sum N q r β‖ ≤ (N : ℝ) * Real.log N :=
+  le_trans (vonMangoldt_residue_sum_norm_le N q r β)
+    (le_trans (psiResClass_le_psi N q r hq hr) (vonMangoldt_chebyshev_le N))
+
 /-- **Major arc approximation** (B8, conditional on Siegel-Walfisz).
     For α = a/q + β with (a, q) = 1, q ≤ (log N)^A, |β| ≤ (log N)^A / N
     (major arc near a/q):
