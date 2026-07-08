@@ -24,6 +24,7 @@ Definitions:
 Proved by hand (Cipher), 2026-07-03.
 -/
 import GoldbachProof.VonMangoldt
+import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic
 
@@ -277,6 +278,43 @@ theorem vonMangoldt_decompose_reformulation (N q : ℕ) (a : ℤ) (β : ℝ) (hq
   simp only [vonMangoldt_residue_sum]
 
 -- ---------------------------------------------------------------------------
+-- Geometric series formula for expSum
+-- ---------------------------------------------------------------------------
+
+/-- Helper: the norm of exp(2πi·r·a/q) is 1 for integers r, a, q. -/
+private lemma norm_exp_rational_times_I (r : ℕ) (a : ℤ) (q : ℕ) :
+    ‖Complex.exp (2 * ↑Real.pi * Complex.I * ↑r * ↑a / ↑q)‖ = 1 := by
+  have hrw : 2 * (↑Real.pi : ℂ) * Complex.I * ↑r * ↑a / ↑q =
+      ↑(2 * Real.pi * (r : ℝ) * (a : ℝ) / (q : ℝ)) * Complex.I := by
+    push_cast; ring
+  rw [hrw, Complex.norm_exp_ofReal_mul_I]
+
+/-- **Theorem #63. Geometric series formula for expSum** (B8).
+    When e(β) := exp(2πiβ) ≠ 1 (equivalently β ∉ ℤ), the completed exponential
+    sum equals the geometric series closed form:
+
+      v(β, N) = expSum N β = (e(Nβ) − 1) / (e(β) − 1)
+
+    This follows from the standard identity ∑_{n<N} rⁿ = (rᴺ − 1)/(r − 1)
+    applied to r = e(2πiβ).
+
+    Proved: axiom-free, 2026-07-08. -/
+theorem expSum_geometric (N : ℕ) (β : ℝ)
+    (hβ : Complex.exp (2 * ↑Real.pi * Complex.I * ↑β) ≠ 1) :
+    expSum N β =
+      (Complex.exp (2 * ↑Real.pi * Complex.I * ↑N * ↑β) - 1) /
+      (Complex.exp (2 * ↑Real.pi * Complex.I * ↑β) - 1) := by
+  unfold expSum
+  have hrw : ∀ n : ℕ,
+      Complex.exp (2 * ↑Real.pi * Complex.I * ↑n * ↑β) =
+      Complex.exp (2 * ↑Real.pi * Complex.I * ↑β) ^ n := by
+    intro n
+    rw [← Complex.exp_nat_mul]
+    congr 1; ring
+  simp_rw [hrw]
+  exact geom_sum_eq hβ N
+
+-- ---------------------------------------------------------------------------
 -- Major arc approximation (B8, conditional on Siegel-Walfisz)
 -- ---------------------------------------------------------------------------
 
@@ -287,6 +325,39 @@ theorem vonMangoldt_residue_sum_bound (N q r : ℕ) (β : ℝ) (hq : 0 < q) (hr 
     ‖vonMangoldt_residue_sum N q r β‖ ≤ (N : ℝ) * Real.log N :=
   le_trans (vonMangoldt_residue_sum_norm_le N q r β)
     (le_trans (psiResClass_le_psi N q r hq hr) (vonMangoldt_chebyshev_le N))
+
+/-- **Theorem #64. Total rational exponential sum bound** (B8).
+    For any rational shift a/q + β and any N, q:
+
+      ‖S_Λ(a/q + β)‖ ≤ q · (N · log N)
+
+    Proof: expand via vonMangoldt_decompose_reformulation (#59), apply the triangle
+    inequality (q terms), use ‖e(ra/q)‖ = 1 and ‖W_r‖ ≤ N log N (#60).
+
+    This bound is weak (linear in q), but it is completely axiom-free and serves as
+    a backup when Siegel-Walfisz is not available (e.g. for small N or large q).
+
+    Proved: axiom-free, 2026-07-08. -/
+theorem vonMangoldt_exp_sum_on_rational_bound (N q : ℕ) (a : ℤ) (β : ℝ) (hq : 0 < q) :
+    ‖vonMangoldt_exp_sum N ((a : ℝ) / q + β)‖ ≤ q * ((N : ℝ) * Real.log N) := by
+  rw [vonMangoldt_decompose_reformulation N q a β hq]
+  apply le_trans (norm_sum_le _ _)
+  have hterm : ∀ r ∈ Finset.range q,
+      ‖Complex.exp (2 * ↑Real.pi * Complex.I * ↑r * ↑a / ↑q) *
+        vonMangoldt_residue_sum N q r β‖ ≤ (N : ℝ) * Real.log N := by
+    intro r hr
+    rw [norm_mul]
+    have h1 : ‖Complex.exp (2 * ↑Real.pi * Complex.I * ↑r * ↑a / ↑q)‖ = 1 :=
+      norm_exp_rational_times_I r a q
+    rw [h1, one_mul]
+    exact vonMangoldt_residue_sum_bound N q r β hq (Finset.mem_range.mp hr)
+  calc ∑ r ∈ Finset.range q,
+        ‖Complex.exp (2 * ↑Real.pi * Complex.I * ↑r * ↑a / ↑q) *
+          vonMangoldt_residue_sum N q r β‖
+      ≤ ∑ _r ∈ Finset.range q, ((N : ℝ) * Real.log N) :=
+        Finset.sum_le_sum hterm
+    _ = q * ((N : ℝ) * Real.log N) := by
+        simp [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
 
 /-- **Major arc approximation** (B8, conditional on Siegel-Walfisz).
     For α = a/q + β with (a, q) = 1, q ≤ (log N)^A, |β| ≤ (log N)^A / N
